@@ -10,4 +10,5 @@ for i in weather_data['Station']:
         print(i['WeatherElement']['WindSpeed'])
         print(i['WeatherElement']['AirTemperature'])
         print(i['WeatherElement']['RelativeHumidity'])
-        break
+        print("--------------------")
+        #break
