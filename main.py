@@ -43,16 +43,18 @@ class BikeRentalPredictor:
         
     def get_weather(self):
         try:
-            API_KEY = "CWA-15F1DACE-AFC5-444F-B7D7-5CFBC6218CEF"
+            API_KEY = "CWA-940152A9-E5DE-4CA3-BE4F-909FF22CD714"
             location = "彰化縣"
-            url = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001"
+            url = "https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-D0047-091?Authorization=CWA-940152A9-E5DE-4CA3-BE4F-909FF22CD714&LocationName=%E5%BD%B0%E5%8C%96%E7%B8%A3"
         
             response = requests.get(url)
+            '''
             params = {
                 "Authorization": API_KEY,
                 "locationName": location
             }
             response = requests.get(url, params=params, timeout=10, verify=True)
+            '''
             if response.status_code == 200:
                 data = response.json()
                 weather_data = data['records']['location'][0]['weatherElement']
