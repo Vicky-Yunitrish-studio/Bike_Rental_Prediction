@@ -9,14 +9,14 @@ import joblib
 class BikeRentalPredictor:
     def __init__(self):
         self.window = tk.Tk()
-        self.window.title("腳踏車租借預測系統")
+        self.window.title("Bike Rental Prediction System")
         self.window.geometry("400x500")
         
         # 創建輸入欄位
         self.create_input_fields()
         
         # 創建預測按鈕
-        self.predict_button = ttk.Button(self.window, text="預測", command=self.predict)
+        self.predict_button = ttk.Button(self.window, text="Predict", command=self.predict)
         self.predict_button.pack(pady=10)
         
         # 顯示結果的標籤
@@ -24,20 +24,20 @@ class BikeRentalPredictor:
         self.result_label.pack(pady=10)
         
         # 新增自動獲取天氣按鈕
-        self.weather_button = ttk.Button(self.window, text="獲取即時天氣", command=self.get_weather)
+        self.weather_button = ttk.Button(self.window, text="Get Current Weather", command=self.get_weather)
         self.weather_button.pack(pady=5)
         
     def create_input_fields(self):
         # 輸入欄位
-        ttk.Label(self.window, text="溫度 (°C):").pack()
+        ttk.Label(self.window, text="Temperature (°C):").pack()
         self.temp_entry = ttk.Entry(self.window)
         self.temp_entry.pack()
         
-        ttk.Label(self.window, text="濕度 (%):").pack()
+        ttk.Label(self.window, text="Humidity (%):").pack()
         self.humidity_entry = ttk.Entry(self.window)
         self.humidity_entry.pack()
         
-        ttk.Label(self.window, text="風速 (m/s):").pack()
+        ttk.Label(self.window, text="Wind Speed (m/s):").pack()
         self.windspeed_entry = ttk.Entry(self.window)
         self.windspeed_entry.pack()
         
@@ -73,15 +73,15 @@ class BikeRentalPredictor:
                 self.windspeed_entry.insert(0, windspeed)
                 
             else:
-                self.result_label.config(text="無法獲取天氣資料")
+                self.result_label.config(text="Unable to fetch weather data")
                 
         except requests.exceptions.ConnectionError:
-            self.result_label.config(text="連線失敗: 請檢查網路連線")
+            self.result_label.config(text="Connection failed: Please check your internet connection")
         except requests.exceptions.Timeout:
-            self.result_label.config(text="請求超時: 伺服器回應時間過長") 
+            self.result_label.config(text="Request timeout: Server response took too long") 
         except Exception as e:
             print(e)
-            self.result_label.config(text="發生錯誤，請稍後再試")
+            self.result_label.config(text="An error occurred, please try again later")
     
     def predict(self):
         try:
@@ -97,10 +97,10 @@ class BikeRentalPredictor:
             predicted_count = int((temp * 10 + (100 - humidity) * 0.5 - windspeed * 5))
             predicted_count = max(0, predicted_count)  # 確保不會出現負數
             
-            self.result_label.config(text=f"預測租借數量: {predicted_count} 輛")
+            self.result_label.config(text=f"Predicted rental count: {predicted_count} bikes")
             
         except ValueError:
-            self.result_label.config(text="請輸入有效的數值")
+            self.result_label.config(text="Please enter valid numbers")
     
     def run(self):
         self.window.mainloop()

@@ -18,7 +18,7 @@
 2. 安裝必要套件:
 
    ``` python
-   pip install tkinter pandas numpy scikit-learn requests
+   pip install tk pandas numpy scikit-learn requests
    ```
 
 3. 執行 main.py
