@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 import requests
-import apriori_test as apriori_test
+import predict_2 as predict_2
 
 class BikeRentalPredictor:
     def __init__(self):
@@ -84,12 +84,26 @@ class BikeRentalPredictor:
     
     def predict(self):
         try:
+            # 預設值
+            hour = 4
+            visibility = 2000
+            dew_point_temp = -18.6
+            solar_radiation = 0
+            rainfall = 0
+            snowfall = 0
+            season = 'Winter'
+            holiday = 'No Holiday'
+            functioning_day = 'Yes'
+
             # 獲取輸入值
             temp = float(self.temp_entry.get())
             humidity = float(self.humidity_entry.get())
             windspeed = float(self.windspeed_entry.get())
             print(temp, humidity, windspeed)
-            self.result_label.config(text=f"Predicted rental count: {apriori_test.predict_bike_count(temp, humidity, windspeed)} bikes")
+
+            predicted_count = predict_2.predict_rented_bike_count(hour, temp, humidity, windspeed, visibility, dew_point_temp,
+                                            solar_radiation, rainfall, snowfall, season, holiday, functioning_day)
+            self.result_label.config(text=f"Predicted rental count: {round(predicted_count)} bikes")
             
         except ValueError:
             self.result_label.config(text="Please enter valid numbers")
