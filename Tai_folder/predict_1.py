@@ -5,7 +5,7 @@ from mlxtend.frequent_patterns import apriori
 from mlxtend.frequent_patterns import association_rules
 
 # 讀取數據
-df = pd.read_csv('/home/yuchi/Bike_Rental_Prediction/SeoulBikeData.csv')
+df = pd.read_csv('./../SeoulBikeData.csv')
 
 # 數據預處理
 # 將連續型變量離散化

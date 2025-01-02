@@ -7,7 +7,7 @@ from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import OneHotEncoder
 
 # Step 1: Load the data
-data_path = '/home/yuchi/Bike_Rental_Prediction/SeoulBikeData.csv'
+data_path = './../SeoulBikeData.csv'
 data = pd.read_csv(data_path)
 
 # Display the first few rows of the dataset
@@ -19,7 +19,7 @@ data = data.dropna()
 data['Rented Bike Count'] = data['Rented Bike Count'].astype(float)
 
 # One-hot encode categorical variables
-ohe = OneHotEncoder(sparse_output=False, drop='first')
+ohe = OneHotEncoder(sparse=False, drop='first')
 categorical_features = ['Seasons', 'Holiday', 'Functioning Day']
 categorical_encoded = ohe.fit_transform(data[categorical_features])
 categorical_encoded_df = pd.DataFrame(categorical_encoded, columns=ohe.get_feature_names_out(categorical_features))
