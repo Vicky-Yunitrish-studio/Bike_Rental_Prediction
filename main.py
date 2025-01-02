@@ -108,36 +108,34 @@ class BikeRentalPredictor:
     def get_weather(self):
         try:
             API_KEY = "CWA-15F1DACE-AFC5-444F-B7D7-5CFBC6218CEF"
-            location = "彰化縣"
-            url = "https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001"
-        
+            url = 'https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=' + API_KEY
+            
             response = requests.get(url)
-            params = {
-                "Authorization": API_KEY,
-                "locationName": location
-            }
-            response = requests.get(url, params=params, timeout=10, verify=True)
-            if response.status_code == 200:
-                data = response.json()
-                weather_data = data['records']['location'][0]['weatherElement']
-                
-                # 解析資料
-                temp = next(item['elementValue'] for item in weather_data if item['elementName'] == 'TEMP')
-                humidity = next(item['elementValue'] for item in weather_data if item['elementName'] == 'HUMD')
-                windspeed = next(item['elementValue'] for item in weather_data if item['elementName'] == 'WDSD')
-                
-                # 更新輸入欄位
-                self.temp_entry.delete(0, tk.END)
-                self.temp_entry.insert(0, temp)
-                
-                self.humidity_entry.delete(0, tk.END)
-                self.humidity_entry.insert(0, float(humidity) * 100)  # 轉換為百分比
-                
-                self.windspeed_entry.delete(0, tk.END)
-                self.windspeed_entry.insert(0, windspeed)
-                
+            data_json = response.json()
+            weather_data = data_json['records']
+            
+            # Find data for 彰化縣
+            for station in weather_data['Station']:
+                if station['GeoInfo']['CountyName'] == "彰化縣":
+                    # Get weather elements
+                    wind_speed = station['WeatherElement']['WindSpeed']
+                    temperature = station['WeatherElement']['AirTemperature']
+                    humidity = station['WeatherElement']['RelativeHumidity']
+                    
+                    # Update input fields
+                    self.temp_entry.delete(0, tk.END)
+                    self.temp_entry.insert(0, temperature)
+                    
+                    self.humidity_entry.delete(0, tk.END)
+                    self.humidity_entry.insert(0, float(humidity))
+                    
+                    self.windspeed_entry.delete(0, tk.END)
+                    self.windspeed_entry.insert(0, wind_speed)
+                    
+                    self.result_label.config(text="Weather data updated successfully")
+                    break
             else:
-                self.result_label.config(text="Unable to fetch weather data")
+                self.result_label.config(text="No data found for 彰化縣")
                 
         except requests.exceptions.ConnectionError:
             self.result_label.config(text="Connection failed: Please check your internet connection")
