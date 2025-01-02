@@ -8,30 +8,33 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import OneHotEncoder
 import joblib
+import math
+from datetime import datetime
 
 class BikeRentalPredictor:
     def __init__(self):
         self.window = tk.Tk()
         self.window.title("Bike Rental Prediction System")
-        self.window.geometry("700x800")
+        self.window.geometry("1200x800")
+        self.window.configure(bg='#f0f0f0')  # 設置背景色
+        
+        # Create main containers
+        self.left_frame = ttk.Frame(self.window)
+        self.left_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        self.right_frame = ttk.Frame(self.window)
+        self.right_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=20, pady=20)
         
         # Initialize model and encoder
         self.model = None
         self.ohe = None
         self.load_and_train_model()
         
-        # Create input fields
-        self.create_input_fields()
-        
-        # Create buttons
-        self.predict_button = ttk.Button(self.window, text="Predict", command=self.predict)
-        self.predict_button.pack(pady=10)
-        
-        self.weather_button = ttk.Button(self.window, text="Get Current Weather", command=self.get_weather)
-        self.weather_button.pack(pady=5)
-        
-        self.result_label = ttk.Label(self.window, text="")
-        self.result_label.pack(pady=10)
+        # Create UI sections
+        self.create_clock_section()
+        self.create_weather_section()
+        self.create_input_section()
+        self.create_control_section()
 
     def load_and_train_model(self):
         try:
@@ -65,10 +68,96 @@ class BikeRentalPredictor:
         except Exception as e:
             print(f"Error loading/training model: {e}")
 
-    def create_input_fields(self):
-        # Extended input fields
+    def create_clock_section(self):
+        clock_frame = ttk.LabelFrame(self.left_frame, text="Time Settings", padding=10)
+        clock_frame.pack(fill=tk.X, pady=10)
+        
+        self.clock_canvas = tk.Canvas(clock_frame, width=200, height=200, bg='white')
+        self.clock_canvas.pack(pady=10)
+        
+        self.hour_var = tk.IntVar(value=0)
+        self.hour_slider = ttk.Scale(
+            clock_frame,
+            from_=0,
+            to=23,
+            orient='horizontal',
+            variable=self.hour_var,
+            command=self.update_clock
+        )
+        self.hour_slider.pack(fill=tk.X, pady=5)
+        
+        self.hour_label = ttk.Label(clock_frame, text="Hour: 0")
+        self.hour_label.pack()
+        
+        self.draw_clock()
+
+    def create_weather_section(self):
+        weather_frame = ttk.LabelFrame(self.left_frame, text="Weather Control", padding=10)
+        weather_frame.pack(fill=tk.X, pady=10)
+        
+        # Auto update settings
+        self.auto_frame = ttk.Frame(weather_frame)
+        self.auto_frame.pack(fill=tk.X, pady=5)
+        
+        self.auto_update_time = tk.BooleanVar(value=False)
+        self.auto_update_weather = tk.BooleanVar(value=False)
+        
+        update_controls = ttk.Frame(self.auto_frame)
+        update_controls.pack(fill=tk.X, pady=5)
+        
+        self.time_check = ttk.Checkbutton(
+            update_controls,
+            text="Auto update time",
+            variable=self.auto_update_time,
+            command=self.toggle_auto_update
+        )
+        self.time_check.pack(side=tk.LEFT, padx=5)
+        
+        self.weather_check = ttk.Checkbutton(
+            update_controls,
+            text="Auto update weather",
+            variable=self.auto_update_weather,
+            command=self.toggle_auto_update
+        )
+        self.weather_check.pack(side=tk.LEFT, padx=5)
+        
+        interval_frame = ttk.Frame(weather_frame)
+        interval_frame.pack(fill=tk.X, pady=5)
+        
+        ttk.Label(interval_frame, text="Update interval:").pack(side=tk.LEFT)
+        self.update_interval = ttk.Entry(interval_frame, width=5)
+        self.update_interval.insert(0, "5")
+        self.update_interval.pack(side=tk.LEFT, padx=5)
+        ttk.Label(interval_frame, text="minutes").pack(side=tk.LEFT)
+        
+        button_frame = ttk.Frame(weather_frame)
+        button_frame.pack(fill=tk.X, pady=10)
+        
+        self.time_button = ttk.Button(button_frame, text="Get Current Time", command=self.get_current_time)
+        self.time_button.pack(side=tk.LEFT, padx=5)
+        
+        self.weather_button = ttk.Button(button_frame, text="Get Current Weather", command=self.get_weather)
+        self.weather_button.pack(side=tk.LEFT, padx=5)
+
+    def create_input_section(self):
+        input_frame = ttk.LabelFrame(self.right_frame, text="Input Parameters", padding=10)
+        input_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Create scrollable frame for inputs
+        canvas = tk.Canvas(input_frame)
+        scrollbar = ttk.Scrollbar(input_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
+
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
+
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        # Numerical inputs
         input_fields = [
-            ("Hour (0-23):", "hour_entry", "0-23"),
             ("Temperature (°C):", "temp_entry", ""),
             ("Humidity (%):", "humidity_entry", ""),
             ("Wind Speed (m/s):", "windspeed_entry", ""),
@@ -80,30 +169,139 @@ class BikeRentalPredictor:
         ]
 
         for label_text, entry_name, placeholder in input_fields:
-            ttk.Label(self.window, text=label_text).pack()
-            entry = ttk.Entry(self.window)
+            frame = ttk.Frame(scrollable_frame)
+            frame.pack(fill=tk.X, pady=2)
+            ttk.Label(frame, text=label_text, width=20).pack(side=tk.LEFT)
+            entry = ttk.Entry(frame)
             entry.insert(0, placeholder)
-            entry.pack()
+            entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
             setattr(self, entry_name, entry)
 
-        # Dropdown for categorical variables
-        ttk.Label(self.window, text="Season:").pack()
+        # Categorical inputs
+        categories_frame = ttk.Frame(scrollable_frame)
+        categories_frame.pack(fill=tk.X, pady=10)
+        
+        # Season
+        season_frame = ttk.Frame(categories_frame)
+        season_frame.pack(fill=tk.X, pady=2)
+        ttk.Label(season_frame, text="Season:", width=20).pack(side=tk.LEFT)
         self.season_var = tk.StringVar()
-        self.season_combo = ttk.Combobox(self.window, textvariable=self.season_var, 
+        self.season_combo = ttk.Combobox(season_frame, textvariable=self.season_var, 
                                         values=['Spring', 'Summer', 'Autumn', 'Winter'])
-        self.season_combo.pack()
+        self.season_combo.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
-        ttk.Label(self.window, text="Holiday Status:").pack()
+        # Holiday
+        holiday_frame = ttk.Frame(categories_frame)
+        holiday_frame.pack(fill=tk.X, pady=2)
+        ttk.Label(holiday_frame, text="Holiday Status:", width=20).pack(side=tk.LEFT)
         self.holiday_var = tk.StringVar()
-        self.holiday_combo = ttk.Combobox(self.window, textvariable=self.holiday_var, 
+        self.holiday_combo = ttk.Combobox(holiday_frame, textvariable=self.holiday_var, 
                                          values=['Holiday', 'No Holiday'])
-        self.holiday_combo.pack()
+        self.holiday_combo.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
-        ttk.Label(self.window, text="Functioning Day:").pack()
+        # Functioning Day
+        functioning_frame = ttk.Frame(categories_frame)
+        functioning_frame.pack(fill=tk.X, pady=2)
+        ttk.Label(functioning_frame, text="Functioning Day:", width=20).pack(side=tk.LEFT)
         self.functioning_var = tk.StringVar()
-        self.functioning_combo = ttk.Combobox(self.window, textvariable=self.functioning_var, 
+        self.functioning_combo = ttk.Combobox(functioning_frame, textvariable=self.functioning_var, 
                                             values=['Yes', 'No'])
-        self.functioning_combo.pack()
+        self.functioning_combo.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+    def create_control_section(self):
+        control_frame = ttk.LabelFrame(self.right_frame, text="Prediction Control", padding=10)
+        control_frame.pack(fill=tk.X, pady=10)
+        
+        self.predict_button = ttk.Button(control_frame, text="Predict", command=self.predict)
+        self.predict_button.pack(fill=tk.X, pady=5)
+        
+        self.result_label = ttk.Label(control_frame, text="", wraplength=400)
+        self.result_label.pack(pady=10)
+
+    def draw_clock(self):
+        # Clear canvas
+        self.clock_canvas.delete("all")
+        
+        # Clock face parameters
+        center_x = 100
+        center_y = 100
+        radius = 80
+        
+        # Draw clock circle
+        self.clock_canvas.create_oval(
+            center_x-radius, center_y-radius,
+            center_x+radius, center_y+radius,
+            width=2
+        )
+        
+        # Draw hour markers
+        for hour in range(24):
+            angle = math.radians(hour * 360 / 24 - 90)
+            outer_x = center_x + radius * math.cos(angle)
+            outer_y = center_y + radius * math.sin(angle)
+            inner_x = center_x + (radius-10) * math.cos(angle)
+            inner_y = center_y + (radius-10) * math.sin(angle)
+            
+            # Draw hour marker line
+            self.clock_canvas.create_line(inner_x, inner_y, outer_x, outer_y)
+            
+            # Draw hour numbers
+            text_x = center_x + (radius-25) * math.cos(angle)
+            text_y = center_y + (radius-25) * math.sin(angle)
+            self.clock_canvas.create_text(text_x, text_y, text=str(hour))
+        
+        # Draw hour hand
+        current_hour = self.hour_var.get()
+        angle = math.radians(current_hour * 360 / 24 - 90)
+        hand_length = radius - 20
+        hand_x = center_x + hand_length * math.cos(angle)
+        hand_y = center_y + hand_length * math.sin(angle)
+        self.clock_canvas.create_line(
+            center_x, center_y, hand_x, hand_y,
+            width=3, fill='red', arrow=tk.LAST
+        )
+
+    def update_clock(self, *args):
+        self.hour_label.config(text=f"Hour: {self.hour_var.get()}")
+        self.draw_clock()
+
+    def get_current_time(self):
+        current_hour = datetime.now().hour
+        self.hour_var.set(current_hour)
+        self.update_clock()
+        self.result_label.config(text=f"Time updated to current hour: {current_hour}")
+
+    def toggle_auto_update(self):
+        """Handle both time and weather auto-updates"""
+        if hasattr(self, '_after_id'):
+            self.window.after_cancel(self._after_id)
+            
+        if self.auto_update_time.get() or self.auto_update_weather.get():
+            self.update_continuously()
+
+    def update_continuously(self):
+        """Update both time and weather based on checkbox states"""
+        try:
+            if self.auto_update_time.get():
+                self.get_current_time()
+            
+            if self.auto_update_weather.get():
+                self.get_weather()
+            
+            # Calculate interval in milliseconds
+            interval = int(self.update_interval.get()) * 60 * 1000  # Convert minutes to milliseconds
+            
+            # Schedule next update if either auto-update is enabled
+            if self.auto_update_time.get() or self.auto_update_weather.get():
+                self._after_id = self.window.after(interval, self.update_continuously)
+                
+        except ValueError:
+            self.result_label.config(text="Please enter a valid update interval")
+            self.auto_update_time.set(False)
+            self.auto_update_weather.set(False)
 
     def get_weather(self):
         try:
@@ -136,6 +334,10 @@ class BikeRentalPredictor:
                     break
             else:
                 self.result_label.config(text="No data found for 彰化縣")
+            
+            # Don't automatically update time unless auto time update is enabled
+            if self.auto_update_time.get():
+                self.get_current_time()
                 
         except requests.exceptions.ConnectionError:
             self.result_label.config(text="Connection failed: Please check your internet connection")
@@ -147,9 +349,9 @@ class BikeRentalPredictor:
     
     def predict(self):
         try:
-            # Get all input values
+            # Get all input values (modified to use hour_var instead of hour_entry)
             input_data = {
-                'Hour': float(self.hour_entry.get()),
+                'Hour': float(self.hour_var.get()),
                 'Temperature(C)': float(self.temp_entry.get()),
                 'Humidity(%)': float(self.humidity_entry.get()),
                 'Wind speed (m/s)': float(self.windspeed_entry.get()),
