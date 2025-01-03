@@ -16,7 +16,25 @@ class BikeRentalPredictor:
         self.window = tk.Tk()
         self.window.title("Bike Rental Prediction System")
         self.window.geometry("1200x800")
-        self.window.configure(bg='#f0f0f0')  # 設置背景色
+        self.window.configure(bg='#f0f0f0')
+        
+        # Initialize fonts first
+        self.base_font_family = "Roboto"  # 改用更現代的字體
+        self.base_window_width = 1200
+        self.base_window_height = 800
+        self.base_font_size = 12  # 增加基礎字體大小
+        
+        # Create initial fonts with larger sizes
+        self.normal_font = (self.base_font_family, self.base_font_size)
+        self.title_font = (self.base_font_family, self.base_font_size + 4, 'bold')  # 增加標題字體大小差異
+        self.small_font = (self.base_font_family, self.base_font_size - 1)
+        
+        # Create and configure style
+        self.style = ttk.Style()
+        self.create_styles()
+        
+        # Add window resize binding
+        self.window.bind('<Configure>', self.on_window_resize)
         
         # Create main containers
         self.left_frame = ttk.Frame(self.window)
@@ -35,6 +53,122 @@ class BikeRentalPredictor:
         self.create_weather_section()
         self.create_input_section()
         self.create_control_section()
+
+    def create_styles(self):
+        """Create initial styles for all widget types with larger sizes"""
+        # Configure basic styles with padding
+        widget_types = ['TLabel', 'TButton', 'TEntry', 'TCheckbutton', 
+                       'TCombobox', 'Horizontal.TScale', 'TLabelframe']
+        
+        for widget in widget_types:
+            self.style.configure(
+                f'Custom.{widget}',
+                font=self.normal_font,
+                padding=5  # 增加內邊距
+            )
+        
+        # Special configurations for specific widgets
+        self.style.configure('Custom.TEntry',
+            font=self.normal_font,
+            padding=8,  # 增加輸入框的內邊距
+            relief="flat",  # 扁平化設計
+            borderwidth=1
+        )
+        
+        self.style.configure('Custom.TButton',
+            font=self.normal_font,
+            padding=10,  # 增加按鈕的內邊距
+            relief="raised",  # 立體按鈕
+            borderwidth=2
+        )
+        
+        self.style.configure('Custom.TCombobox',
+            font=self.normal_font,
+            padding=8,
+            relief="flat"
+        )
+        
+        self.style.configure('Header.TLabel',
+            font=self.title_font,
+            padding=10,
+            foreground='#2c3e50'  # 深色標題
+        )
+        
+        self.style.configure('Custom.TLabelframe.Label',
+            font=self.title_font,
+            padding=10,
+            foreground='#2c3e50'
+        )
+        
+        self.style.configure('Custom.TLabelframe',
+            borderwidth=2,
+            relief="solid"
+        )
+
+    def update_widget_styles(self):
+        """Update existing styles with new font sizes"""
+        widget_types = ['TLabel', 'TButton', 'TEntry', 'TCheckbutton', 
+                       'TCombobox', 'Horizontal.TScale', 'TLabelframe']
+        
+        for widget in widget_types:
+            self.style.configure(
+                f'Custom.{widget}',
+                font=self.normal_font
+            )
+        
+        self.style.configure('Header.TLabel', font=self.title_font)
+        self.style.configure('Custom.TLabelframe.Label', font=self.title_font)
+
+    def update_font_size(self):
+        """Update font sizes based on window size"""
+        width = self.window.winfo_width()
+        height = self.window.winfo_height()
+        
+        # Calculate scaling factor based on window size
+        width_scale = width / self.base_window_width
+        height_scale = height / self.base_window_height
+        scale = min(width_scale, height_scale)
+        
+        # Calculate new font size with larger base
+        new_size = int(self.base_font_size * scale)
+        new_size = max(10, min(new_size, 24))  # 增加字體大小範圍
+        
+        # Update fonts with larger sizes
+        self.normal_font = (self.base_font_family, new_size)
+        self.title_font = (self.base_font_family, new_size + 4, 'bold')
+        self.small_font = (self.base_font_family, max(10, new_size - 1))
+        
+        # Update styles and widgets
+        self.update_widget_styles()
+        self.update_widget_fonts(self.window)
+
+    def update_widget_fonts(self, widget):
+        """Recursively update fonts for all widgets"""
+        try:
+            # Update specific widget types
+            if isinstance(widget, ttk.Label):
+                widget.configure(style='Custom.TLabel')
+            elif isinstance(widget, ttk.Button):
+                widget.configure(style='Custom.TButton')
+            elif isinstance(widget, ttk.Entry):
+                widget.configure(style='Custom.TEntry')
+            elif isinstance(widget, ttk.Checkbutton):
+                widget.configure(style='Custom.TCheckbutton')
+            elif isinstance(widget, ttk.Combobox):
+                widget.configure(font=self.normal_font)
+            elif isinstance(widget, ttk.Scale):
+                widget.configure(style='Custom.Horizontal.TScale')
+            elif isinstance(widget, tk.Canvas) and widget == self.clock_canvas:
+                self.draw_clock()
+            elif isinstance(widget, ttk.LabelFrame):
+                widget.configure(style='Custom.TLabelframe')
+            
+            # Recursively update all children
+            for child in widget.winfo_children():
+                self.update_widget_fonts(child)
+                
+        except Exception as e:
+            print(f"Font update error: {e}")
 
     def load_and_train_model(self):
         try:
@@ -168,13 +302,19 @@ class BikeRentalPredictor:
             ("Snowfall (cm):", "snowfall_entry", "0-100")
         ]
 
+        # 修改輸入欄位的創建
         for label_text, entry_name, placeholder in input_fields:
             frame = ttk.Frame(scrollable_frame)
-            frame.pack(fill=tk.X, pady=2)
-            ttk.Label(frame, text=label_text, width=20).pack(side=tk.LEFT)
-            entry = ttk.Entry(frame)
+            frame.pack(fill=tk.X, pady=5)  # 增加垂直間距
+            
+            # 增加標籤寬度和字體大小
+            label = ttk.Label(frame, text=label_text, width=25, style='Custom.TLabel')
+            label.pack(side=tk.LEFT, padx=10)  # 增加水平間距
+            
+            # 增加輸入框高度
+            entry = ttk.Entry(frame, style='Custom.TEntry')
             entry.insert(0, placeholder)
-            entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
+            entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=10, ipady=3)  # 增加內部垂直填充
             setattr(self, entry_name, entry)
 
         # Categorical inputs
@@ -251,7 +391,7 @@ class BikeRentalPredictor:
             # Draw hour numbers
             text_x = center_x + (radius-25) * math.cos(angle)
             text_y = center_y + (radius-25) * math.sin(angle)
-            self.clock_canvas.create_text(text_x, text_y, text=str(hour))
+            self.clock_canvas.create_text(text_x, text_y, text=str(hour), font=(self.base_font_family, max(8, int(self.base_font_size * self.window.winfo_width() / self.base_window_width))), fill='#2c3e50')
         
         # Draw hour hand
         current_hour = self.hour_var.get()
@@ -392,6 +532,14 @@ class BikeRentalPredictor:
 
     def run(self):
         self.window.mainloop()
+
+    def on_window_resize(self, event=None):
+        """Handle window resize event"""
+        if event and event.widget == self.window:
+            # Add delay to prevent too frequent updates
+            if hasattr(self, '_resize_after_id'):
+                self.window.after_cancel(self._resize_after_id)
+            self._resize_after_id = self.window.after(100, self.update_font_size)
 
 if __name__ == "__main__":
     app = BikeRentalPredictor()
