@@ -179,7 +179,7 @@ class BikeRentalPredictor:
             data['Rented Bike Count'] = data['Rented Bike Count'].astype(float)
 
             # One-hot encode categorical variables
-            self.ohe = OneHotEncoder(sparse=False, drop='first')
+            self.ohe = OneHotEncoder(sparse_output=False, drop='first')
             categorical_features = ['Seasons', 'Holiday', 'Functioning Day']
             categorical_encoded = self.ohe.fit_transform(data[categorical_features])
             categorical_encoded_df = pd.DataFrame(
