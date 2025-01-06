@@ -179,7 +179,7 @@ class BikeRentalPredictor:
             data['Rented Bike Count'] = data['Rented Bike Count'].astype(float)
 
             # One-hot encode categorical variables
-            self.ohe = OneHotEncoder(sparse_output=False, drop='first')
+            self.ohe = OneHotEncoder(sparse=False, drop='first')  # Changed from sparse_output to sparse
             categorical_features = ['Seasons', 'Holiday', 'Functioning Day']
             categorical_encoded = self.ohe.fit_transform(data[categorical_features])
             categorical_encoded_df = pd.DataFrame(
@@ -447,38 +447,56 @@ class BikeRentalPredictor:
         try:
             API_KEY = "CWA-15F1DACE-AFC5-444F-B7D7-5CFBC6218CEF"
             url = 'https://opendata.cwa.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=' + API_KEY
-            
+
             response = requests.get(url)
             data_json = response.json()
             weather_data = data_json['records']
-            
-            # Find data for 彰化縣
+
+            # Initialize variables for calculating averages
+            total_temp = 0
+            total_humidity = 0
+            total_wind_speed = 0
+            station_count = 0
+
+            # Iterate through stations to find 彰化縣 data and accumulate values
             for station in weather_data['Station']:
                 if station['GeoInfo']['CountyName'] == "彰化縣":
-                    # Get weather elements
-                    wind_speed = station['WeatherElement']['WindSpeed']
-                    temperature = station['WeatherElement']['AirTemperature']
-                    humidity = station['WeatherElement']['RelativeHumidity']
-                    
-                    # Update input fields
-                    self.temp_entry.delete(0, tk.END)
-                    self.temp_entry.insert(0, temperature)
-                    
-                    self.humidity_entry.delete(0, tk.END)
-                    self.humidity_entry.insert(0, float(humidity))
-                    
-                    self.windspeed_entry.delete(0, tk.END)
-                    self.windspeed_entry.insert(0, wind_speed)
-                    
-                    self.result_label.config(text="Weather data updated successfully")
-                    break
+                    station_count += 1
+
+                    # Extract weather elements
+                    wind_speed = float(station['WeatherElement']['WindSpeed'])
+                    temperature = float(station['WeatherElement']['AirTemperature'])
+                    humidity = float(station['WeatherElement']['RelativeHumidity'])
+
+                    # Accumulate values
+                    total_temp += temperature
+                    total_humidity += humidity
+                    total_wind_speed += wind_speed
+
+            if station_count > 0:
+                # Calculate averages
+                avg_temp = total_temp / station_count
+                avg_humidity = total_humidity / station_count
+                avg_wind_speed = total_wind_speed / station_count
+
+                # Update input fields
+                self.temp_entry.delete(0, tk.END)
+                self.temp_entry.insert(0, f"{avg_temp:.1f}")
+
+                self.humidity_entry.delete(0, tk.END)
+                self.humidity_entry.insert(0, f"{avg_humidity:.1f}")
+
+                self.windspeed_entry.delete(0, tk.END)
+                self.windspeed_entry.insert(0, f"{avg_wind_speed:.1f}")
+
+                self.result_label.config(text="Weather data updated successfully")
             else:
                 self.result_label.config(text="No data found for 彰化縣")
-            
-            # Don't automatically update time unless auto time update is enabled
+
+            # Update time if auto-update is enabled
             if self.auto_update_time.get():
                 self.get_current_time()
-                
+
         except requests.exceptions.ConnectionError:
             self.result_label.config(text="Connection failed: Please check your internet connection")
         except requests.exceptions.Timeout:
