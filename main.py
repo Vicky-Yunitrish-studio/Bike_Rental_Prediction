@@ -548,9 +548,6 @@ class BikeRentalPredictor:
         except Exception as e:
             self.result_label.config(text=f"Prediction error: {str(e)}")
 
-    def run(self):
-        self.window.mainloop()
-
     def on_window_resize(self, event=None):
         """Handle window resize event"""
         if event and event.widget == self.window:
@@ -558,6 +555,9 @@ class BikeRentalPredictor:
             if hasattr(self, '_resize_after_id'):
                 self.window.after_cancel(self._resize_after_id)
             self._resize_after_id = self.window.after(100, self.update_font_size)
+
+    def run(self):
+        self.window.mainloop()
 
 if __name__ == "__main__":
     app = BikeRentalPredictor()
